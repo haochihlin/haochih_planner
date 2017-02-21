@@ -127,7 +127,7 @@ namespace haochih_local_planner
     if(this->l1_based_global_plan_.size() == 0)
       return ;
 
-    cout << "Ho !" << endl;
+    #cout << "Ho !" << endl;
     UpdateGlobalPlan();
   }
 
