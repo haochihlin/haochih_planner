@@ -1,0 +1,51 @@
+<package>
+    <name>haochih_local_planner</name>
+    <version>1.0.0</version>
+    <description>
+
+        This package provides a modified version of Dynamic Window Approach Planner.
+	The main contribution of this version is to solve U-turn issue.
+        The parameters for this planner are also dynamically reconfigurable. 
+        This package's ROS wrapper adheres to the BaseLocalPlanner interface specified in the 
+        <a href="http://wiki.ros.org/nav_core">nav_core</a> package.
+
+    </description>
+    <author>HaoChih, LIN (AdvRobot Ltd)</author>
+    <author>f44006076@gmail.com</author>
+    <maintainer email="f44006076@gmail.com">HaoChih, LIN</maintainer>
+    <license>BSD</license>
+    <url>http://wiki.ros.org/dwa_local_planner</url>
+
+    <buildtool_depend>catkin</buildtool_depend>
+
+    <build_depend>dwa_local_planner</build_depend>
+    <build_depend>cmake_modules</build_depend>
+    <build_depend>costmap_2d</build_depend>
+    <build_depend>dynamic_reconfigure</build_depend>
+    <build_depend>eigen</build_depend>
+    <build_depend>nav_core</build_depend>
+    <build_depend>nav_msgs</build_depend>
+    <build_depend>geometry_msgs</build_depend>
+    <build_depend>pluginlib</build_depend>
+    <build_depend>pcl_conversions</build_depend>
+    <build_depend>roscpp</build_depend>
+    <build_depend>tf</build_depend>
+
+    <run_depend>dwa_local_planner</run_depend>
+    <run_depend>costmap_2d</run_depend>
+    <run_depend>dynamic_reconfigure</run_depend>
+    <run_depend>eigen</run_depend>
+    <run_depend>nav_core</run_depend>
+    <run_depend>nav_msgs</run_depend>
+    <run_depend>geometry_msgs</run_depend>
+    <run_depend>pluginlib</run_depend>
+    <run_depend>roscpp</run_depend>
+    <run_depend>tf</run_depend>
+
+    <export>
+        <nav_core plugin="${prefix}/blp_plugin.xml" />
+    </export>
+
+</package>
+
+

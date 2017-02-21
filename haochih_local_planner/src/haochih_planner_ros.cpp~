@@ -1,0 +1,126 @@
+/*********************************************************************
+*
+* Software License Agreement (BSD License)
+*
+*  Copyright (c) 2009, Willow Garage, Inc.
+*  All rights reserved.
+*
+*  Redistribution and use in source and binary forms, with or without
+*  modification, are permitted provided that the following conditions
+*  are met:
+*
+*   * Redistributions of source code must retain the above copyright
+*     notice, this list of conditions and the following disclaimer.
+*   * Redistributions in binary form must reproduce the above
+*     copyright notice, this list of conditions and the following
+*     disclaimer in the documentation and/or other materials provided
+*     with the distribution.
+*   * Neither the name of Willow Garage, Inc. nor the names of its
+*     contributors may be used to endorse or promote products derived
+*     from this software without specific prior written permission.
+*
+*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+*  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+*  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+*  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+*  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+*  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+*  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+*  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+*  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+*  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+*  POSSIBILITY OF SUCH DAMAGE.
+*
+* Author: HaoChih, LIN
+* Email: f44006076@gmail.com
+*********************************************************************/
+
+#include <haochih_local_planner/haochih_planner_ros.h>
+#include <Eigen/Core>
+#include <cmath>
+#include <ros/console.h>
+#include <pluginlib/class_list_macros.h>
+#include <nav_msgs/Path.h>
+
+//register this planner as a BaseLocalPlanner plugin
+PLUGINLIB_EXPORT_CLASS(haochih_local_planner::HaoChihPlannerROS, nav_core::BaseLocalPlanner)
+
+namespace haochih_local_planner {
+
+  HaoChihPlannerROS::HaoChihPlannerROS() : initialized_(false), l1_dist_(2.0)
+  {
+    this->dwaObj_ = boost::shared_ptr<dwa_local_planner::DWAPlannerROS>(new dwa_local_planner::DWAPlannerROS);
+  }
+  
+
+  HaoChihPlannerROS::~HaoChihPlannerROS()
+  {
+    //make sure to clean things up
+    this->dwaObj_->~DWAPlannerROS();
+    delete this->dsrv_;
+  }
+
+
+  void HaoChihPlannerROS::initialize( std::string name, tf::TransformListener* tf, costmap_2d::Costmap2DROS* costmap_ros)
+  {
+    if (! isInitialized())
+    {
+      ros::NodeHandle private_nh("~/" + name + "_l1_setting");
+      this->tf_ = tf;
+      this->costmap_ros_ = costmap_ros;
+      this->costmap_ros_->getRobotPose(this->current_pose_);
+
+      // make sure to update the costmap we'll use for this cycle
+      costmap_2d::Costmap2D* costmap = this->costmap_ros_->getCostmap();
+
+      this->initialized_ = true;
+
+      this->dsrv_ = new dynamic_reconfigure::Server<HaoChihPlannerConfig>(private_nh);
+      dynamic_reconfigure::Server<HaoChihPlannerConfig>::CallbackType cb = boost::bind(&HaoChihPlannerROS::reconfigureCB, this, _1, _2);
+      this->dsrv_->setCallback(cb);
+
+      this->dwaObj_->initialize( name, tf, costmap_ros);
+    }
+    else{
+      ROS_WARN("This planner has already been initialized, doing nothing.");
+    }
+  }
+  
+
+  bool HaoChihPlannerROS::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan)
+  {
+    if (! isInitialized()) {
+      ROS_ERROR("This planner has not been initialized, please call initialize() before using this planner");
+      return false;
+    }
+
+
+
+    return UpdateGlobalPlan(orig_global_plan);
+  }
+
+
+  bool UpdateGlobalPlan(const std::vector<geometry_msgs::PoseStamped>& updated_global_plan)
+  {
+     return this->dwaObj_->setPlan(updated_global_plan);
+  }
+
+
+  bool HaoChihPlannerROS::isGoalReached() 
+  {
+    return this->dwaObj_->isGoalReached();
+  }
+
+
+  bool HaoChihPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) 
+  {
+    this->dwaObj_->computeVelocityCommands(cmd_vel);
+  }
+
+  void HaoChihPlannerROS::reconfigureCB(HaoChihPlannerConfig &config, uint32_t level) 
+  {
+    this->l1_dist_ = config.l1_dist;   
+  }
+
+};
