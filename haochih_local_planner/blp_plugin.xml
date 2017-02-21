@@ -1,7 +1,0 @@
-<library path="lib/libhaochih_local_planner">
-  <class name="haochih_local_planner/HaoChihPlannerROS" type="haochih_local_planner::HaoChihPlannerROS" base_class_type="nav_core::BaseLocalPlanner">
-    <description>
-      A implementation of a local planner using either a modified DWA approach based (HaoChih ver.) on configuration parameters.
-    </description>
-  </class>
-</library>
