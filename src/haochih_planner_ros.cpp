@@ -189,8 +189,8 @@ namespace haochih_local_planner
         break;
     }
     
-    if(accumulate_dist <= l1_dist)
-      return false; //it represents the robot is approaching the goal
+    //if(accumulate_dist <= l1_dist)
+    //  return false; //it represents the robot is approaching the goal
 
     if(updated_l1_plan.size() >= 1)
       return this->dwaObj_->setPlan(updated_l1_plan); //Send l1-based plan to DWA planner
