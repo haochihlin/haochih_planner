@@ -53,7 +53,7 @@ PLUGINLIB_EXPORT_CLASS(haochih_local_planner::HaoChihPlannerROS, nav_core::BaseL
 namespace haochih_local_planner
 {
 
-  HaoChihPlannerROS::HaoChihPlannerROS() : initialized_(false), l1_dist_(2.0), ClosetSearchStartId_(0)
+  HaoChihPlannerROS::HaoChihPlannerROS() : initialized_(false), l1_dist_(2.0), ClosetSearchStartId_(0), TimerPaused_(true), GoalReached_(false)
   {
     this->dwaObj_ = boost::shared_ptr<dwa_local_planner::DWAPlannerROS>(new dwa_local_planner::DWAPlannerROS);
   }
@@ -84,6 +84,8 @@ namespace haochih_local_planner
       this->initialized_ = true;
       this->ClosetSearchStartId_ = 0;
       this->l1_based_global_plan_.clear();
+      this->TimerPaused_ = false;
+      this->GoalReached_ = false;
       
       // Initialize the dynamic_reconfigure servie
       this->dsrv_ = new dynamic_reconfigure::Server<HaoChihPlannerConfig>(private_nh);
@@ -91,7 +93,7 @@ namespace haochih_local_planner
       this->dsrv_->setCallback(cb);
 
       // Initialize the ROS Timer loop;
-      this->timer_update_ = private_nh.createTimer(ros::Duration(0.2), &HaoChihPlannerROS::TimerUpdatePlan, this); // Duration(0.2) -> 5Hz
+      this->timer_update_ = private_nh.createTimer(ros::Duration(0.5), &HaoChihPlannerROS::TimerUpdatePlan, this); // Duration(0.5) -> 2Hz
       
       // Initialize the DWA-ROS Obj
       this->dwaObj_->initialize( name, tf, costmap_ros);
@@ -108,13 +110,17 @@ namespace haochih_local_planner
       ROS_ERROR("This planner has not been initialized, please call initialize() before using this planner");
       return false;
     }
+    this->TimerPaused_ = true; // Pause timer loop
+    
     // Clear previous global plan vector once receives new plan vector
     this->l1_based_global_plan_.clear();
+    
     // Assign new plan data into "l1_based_global_plan" vector
     this->l1_based_global_plan_.assign(orig_global_plan.begin(), orig_global_plan.end());
 
     this->ClosetSearchStartId_ = 0;
-
+    this->GoalReached_ = false;
+    this->TimerPaused_ = false;
     return UpdateGlobalPlan();
   }
 
@@ -127,14 +133,16 @@ namespace haochih_local_planner
     if(this->l1_based_global_plan_.size() == 0)
       return ;
 
-    //cout << "Ho !" << endl;
+    if(this->TimerPaused_)
+      return ;
+
     UpdateGlobalPlan();
   }
 
 
   bool HaoChihPlannerROS::UpdateGlobalPlan()
   {
-    if(this->dwaObj_->isGoalReached() )
+    if(this->GoalReached_)
       return false;
   
     // Get robot current pose
@@ -193,13 +201,14 @@ namespace haochih_local_planner
 
   bool HaoChihPlannerROS::isGoalReached() 
   {
-    return this->dwaObj_->isGoalReached();
+    this->GoalReached_ = this->dwaObj_->isGoalReached();
+    return this->GoalReached_;
   }
 
 
   bool HaoChihPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) 
   {
-    this->dwaObj_->computeVelocityCommands(cmd_vel);
+    return this->dwaObj_->computeVelocityCommands(cmd_vel);
   }
 
   void HaoChihPlannerROS::reconfigureCB(HaoChihPlannerConfig &config, uint32_t level) 

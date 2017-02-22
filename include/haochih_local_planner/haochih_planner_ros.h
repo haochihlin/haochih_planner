@@ -128,6 +128,8 @@ namespace haochih_local_planner
       double l1_dist_;
       int ClosetSearchStartId_;
       bool initialized_;
+      bool GoalReached_;
+      bool TimerPaused_;
       
       vector<geometry_msgs::PoseStamped> l1_based_global_plan_;
       
